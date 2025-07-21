@@ -2,14 +2,14 @@
 - name: Multi-OS AWS VM Provisioning with Terraform
   hosts: localhost
   gather_facts: false
+  collections:
+    - community.general
 
   vars:
     vm_name: "{{ name }}"
-    vm_os_input: "{{ os }}"
-    vm_flavor_raw: "{{ flavor }}"
-    cloud_init_raw: "{{ cloudInit }}"
-    terraform_dir: /tmp/cloud-vm-provision/terraform
-    terraform_version: "1.6.6" # or your preferred version
+    vm_os_input: "{{ os }}" # e.g., 'ubuntu-22.04', 'redhat-9'
+    vm_flavor_raw: "{{ flavor }}" # e.g., 'small', 'medium'
+    cloud_init_raw: "{{ cloudInit }}" # cloud-config content
 
   tasks:
     - name: Map OS to AMI filters
@@ -39,59 +39,35 @@
     - name: Map flavor to EC2 instance type
       set_fact:
         vm_flavor: >-
-          {% if vm_flavor_raw == 'small' %} t2.small
-          {% elif vm_flavor_raw == 'medium' %} t2.medium
-          {% elif vm_flavor_raw == 'large' %} t2.large
-          {% else %} t2.micro {% endif %}
+          {% if vm_flavor_raw == 'small' %}
+            t2.small
+          {% elif vm_flavor_raw == 'medium' %}
+            t2.medium
+          {% elif vm_flavor_raw == 'large' %}
+            t2.large
+          {% else %}
+            t2.micro
+          {% endif %}
 
     - name: Encode cloud-init to base64
       set_fact:
         cloud_init: "{{ cloud_init_raw | b64encode }}"
 
-    - name: Install unzip (required to extract Terraform)
-      ansible.builtin.package:
-        name: unzip
-        state: present
-      become: true
-
-    - name: Download Terraform CLI
-      ansible.builtin.get_url:
-        url: "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
-        dest: "/tmp/terraform_{{ terraform_version }}.zip"
-        mode: "0644"
-
-    - name: Unarchive Terraform CLI
-      ansible.builtin.unarchive:
-        src: "/tmp/terraform_{{ terraform_version }}.zip"
-        dest: /usr/local/bin/
-        remote_src: yes
-      become: true
-
-    - name: Ensure Terraform is executable
-      ansible.builtin.file:
-        path: /usr/local/bin/terraform
-        mode: "0755"
-      become: true
-
     - name: Clone Terraform project
       ansible.builtin.git:
         repo: https://github.com/khalilMaat/cloud-vm-provision.git
-        dest: "{{ terraform_dir }}"
+        dest: /tmp/cloud-vm-provision/terraform
         force: yes
 
-    - name: Initialize Terraform
-      ansible.builtin.command:
-        cmd: terraform init
-        chdir: "{{ terraform_dir }}"
-
     - name: Apply Terraform
-      ansible.builtin.command:
-        cmd: >
-          terraform apply -auto-approve
-          -var="vm_name={{ vm_name }}"
-          -var="vm_os={{ vm_os_input }}"
-          -var="vm_flavor={{ vm_flavor }}"
-          -var="cloud_init={{ cloud_init }}"
-          -var="ami_owner={{ ami_owner }}"
-          -var="ami_name_filter={{ ami_name_filter }}"
-        chdir: "{{ terraform_dir }}"
+      community.general.terraform:
+        project_path: /tmp/cloud-vm-provision/terraform
+        force_init: true
+        state: present
+        variables:
+          vm_name: "{{ vm_name }}"
+          vm_os: "{{ vm_os_input }}"
+          vm_flavor: "{{ vm_flavor }}"
+          cloud_init: "{{ cloud_init }}"
+          ami_owner: "{{ ami_owner }}"
+          ami_name_filter: "{{ ami_name_filter }}"
