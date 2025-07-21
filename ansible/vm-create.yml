@@ -4,10 +4,10 @@
   gather_facts: false
 
   vars:
-    vm_name: "{{ name }}"
-    vm_os_input: "{{ os }}" # e.g., 'ubuntu-22.04', 'redhat-9'
-    vm_flavor_raw: "{{ flavor }}" # e.g., 'small', 'medium'
-    cloud_init_raw: "{{ cloudInit }}" # cloud-config content
+    vm_name: "{{ vm_name }}"
+    vm_os_input: "{{ vm_os }}"
+    vm_flavor_raw: "{{ vm_flavor }}"
+    cloud_init_raw: "{{ cloud_init }}"
 
   tasks:
     - name: Map OS to AMI filters
