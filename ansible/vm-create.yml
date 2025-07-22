@@ -1,6 +1,6 @@
 ---
 - name: Multi-OS AWS VM Provisioning with Terraform
-  hosts: localhost
+  hosts: ansible1
   gather_facts: false
 
   vars:
