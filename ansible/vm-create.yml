@@ -32,6 +32,12 @@
       set_fact:
         cloud_init: "{{ cloud_init_raw | b64encode }}"
 
+    - name: Clone Terraform project
+      ansible.builtin.git:
+        repo: https://github.com/khalilMaat/cloud-vm-provision.git
+        dest: /tmp/cloud-vm-provision
+        force: yes
+
     - name: Run Terraform
       community.general.terraform:
         project_path: "/tmp/cloud-vm-provision/terraform"
