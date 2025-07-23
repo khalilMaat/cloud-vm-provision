@@ -11,27 +11,13 @@ provider "aws" {
   region = "us-east-1"
 }
 
-data "aws_ami" "selected" {
-  most_recent = true
-  owners      = [var.ami_owner]
-
-  filter {
-    name   = "name"
-    values = [var.ami_name_filter]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 resource "aws_instance" "vm" {
-  ami           = data.aws_ami.selected.id
+  ami           = var.ami_id # Direct AMI from variables
   instance_type = var.vm_flavor
-  user_data     = base64decode(var.cloud_init)
+  user_data     = try(base64decode(var.cloud_init), var.cloud_init) # Handles both encoded and raw input
 
   tags = {
-    Name = var.vm_name
+    Name    = var.vm_name
+    OS_Type = var.vm_os # Optional tracking
   }
 }

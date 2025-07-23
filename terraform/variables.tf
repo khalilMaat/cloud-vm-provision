@@ -1,29 +1,27 @@
 variable "vm_name" {
-  description = "Name of the VM"
-  type        = string
-}
-
-variable "vm_os" {
-  description = "OS version string from frontend"
+  description = "Name tag for the EC2 instance"
   type        = string
 }
 
 variable "vm_flavor" {
-  description = "EC2 instance type (e.g., t2.micro)"
+  description = "EC2 instance type"
   type        = string
+  default     = "t3.micro" # Default value as fallback
 }
 
 variable "cloud_init" {
-  description = "Base64-encoded cloud-init content"
+  description = "Base64-encoded user data"
   type        = string
 }
 
-variable "ami_owner" {
-  description = "Owner ID of the AMI"
+variable "ami_id" {
+  description = "Direct AMI ID for the instance"
   type        = string
 }
 
-variable "ami_name_filter" {
-  description = "AMI name pattern to filter"
+# Optional: Add validation rules for variables
+variable "vm_os" {
+  description = "OS type (for tracking, not used in Terraform)"
   type        = string
+  default     = "" # Marked as optional since we use ami_id directly
 }

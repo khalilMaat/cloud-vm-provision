@@ -1,71 +1,44 @@
 ---
-- name: Multi-OS AWS VM Provisioning with Terraform
+- name: Simplified AWS VM Provisioning
   hosts: ansible1
   gather_facts: false
 
   vars:
     vm_name: "{{ vm_name }}"
-    vm_os_input: "{{ vm_os }}"
     vm_flavor_raw: "{{ vm_flavor }}"
     cloud_init_raw: "{{ cloud_init }}"
 
+    # Direct AMI IDs for us-east-1 (update as needed)
+    os_ami_map:
+      ubuntu-22.04: "ami-0c7217cdde317cfec" # Ubuntu 22.04 LTS
+      redhat-9: "ami-0b0af3577fe5e3532" # RHEL 9
+      # Add more AMIs as needed
+
   tasks:
-    - name: Map OS to AMI filters
-      set_fact:
-        os_map:
-          ubuntu-22.04:
-            name: "ubuntu/images/hvm-ssd/ubuntu-22.04-amd64-server-*"
-            owner: "099720109477"
-          redhat-9:
-            name: "RHEL-9*_HVM-*-x86_64-*"
-            owner: "309956199498"
-          centos-9:
-            name: "CentOS Stream 9 x86_64*"
-            owner: "125523088429"
-          debian-12:
-            name: "debian-12-amd64-*"
-            owner: "136693071363"
-          windows-2022:
-            name: "Windows_Server-2022-English-Full-Base-*"
-            owner: "801119661308"
+    - name: Validate OS selection
+      fail:
+        msg: "Unsupported OS '{{ vm_os }}'. Valid options: {{ os_ami_map.keys() | list }}"
+      when: vm_os not in os_ami_map
 
-    - name: Set AMI filter vars
-      set_fact:
-        ami_name_filter: "{{ os_map[vm_os_input].name }}"
-        ami_owner: "{{ os_map[vm_os_input].owner }}"
-
-    - name: Map flavor to EC2 instance type
+    - name: Set instance type
       set_fact:
         vm_flavor: >-
-          {% if vm_flavor_raw == 'small' %}
-            t2.small
-          {% elif vm_flavor_raw == 'medium' %}
-            t2.medium
-          {% elif vm_flavor_raw == 'large' %}
-            t2.large
-          {% else %}
-            t2.micro
-          {% endif %}
+          {% if vm_flavor_raw == 'small' %}t2.small
+          {% elif vm_flavor_raw == 'medium' %}t2.medium
+          {% elif vm_flavor_raw == 'large' %}t2.large
+          {% else %}t2.micro{% endif %}
 
-    - name: Encode cloud-init to base64
+    - name: Prepare cloud-init
       set_fact:
         cloud_init: "{{ cloud_init_raw | b64encode }}"
 
-    - name: Clone Terraform project
-      ansible.builtin.git:
-        repo: https://github.com/khalilMaat/cloud-vm-provision.git
-        dest: /tmp/cloud-vm-provision
-        force: yes
-
-    - name: Apply Terraform
+    - name: Run Terraform
       community.general.terraform:
-        project_path: /tmp/cloud-vm-provision/terraform
+        project_path: "/tmp/cloud-vm-provision/terraform"
         force_init: true
         state: present
         variables:
           vm_name: "{{ vm_name }}"
-          vm_os: "{{ vm_os_input }}"
           vm_flavor: "{{ vm_flavor }}"
           cloud_init: "{{ cloud_init }}"
-          ami_owner: "{{ ami_owner }}"
-          ami_name_filter: "{{ ami_name_filter }}"
+          ami_id: "{{ os_ami_map[vm_os] }}"
