@@ -1,7 +1,7 @@
 ---
 - name: Simplified AWS VM Provisioning
   hosts: ansible1
-  gather_facts: false
+  gather_facts: true
 
   vars:
     vm_name: "{{ vm_name | default('test-vm') }}"
