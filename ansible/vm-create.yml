@@ -41,7 +41,7 @@
 
     - name: Initialize and apply Terraform configuration
       community.general.terraform:
-        project_path: "{{ terraform_project_path }}"
+        project_path: /tmp/cloud-vm-provision/terraform
         state: present
         force_init: true
         variables:
