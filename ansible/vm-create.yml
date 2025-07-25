@@ -4,17 +4,15 @@
   gather_facts: false
 
   vars:
-    vm_name: "{{ vm_name }}"
-    vm_flavor_raw: "{{ vm_flavor }}"
-    cloud_init_raw: "{{ cloud_init }}"
+    vm_name: "{{ vm_name | default('test-vm') }}"
+    vm_flavor_raw: "{{ vm_flavor | default('small') }}"
+    vm_os: "{{ vm_os | default('ubuntu-22.04') }}"
+    cloud_init_raw: "{{ cloud_init | default('#cloud-config\npackage_upgrade: true') }}"
 
-    # Direct AMI IDs for us-east-1 (update as needed)
     os_ami_map:
-      ubuntu-22.04: "ami-0c7217cdde317cfec" # Ubuntu 22.04 LTS
-      redhat-9: "ami-0b0af3577fe5e3532" # RHEL 9
-      # Add more AMIs as needed
+      ubuntu-22.04: "ami-0c7217cdde317cfec"
+      redhat-9: "ami-0b0af3577fe5e3532"
 
-      # Instance type mapping
     flavor_map:
       small: "t3.small"
       medium: "t3.medium"
@@ -32,15 +30,18 @@
 
     - name: Clone Terraform project
       ansible.builtin.git:
-        repo: https://github.com/khalilMaat/cloud-vm-provision.git
+        repo: https://github.com/khalilMaat/cloud-vm-provision.git  
         dest: /tmp/cloud-vm-provision
         force: yes
 
     - name: Initialize Terraform
-      command: |
-        terraform init
+      command: terraform init
       args:
         chdir: "/tmp/cloud-vm-provision/terraform"
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ AWS_ACCESS_KEY_ID }}"
+        AWS_SECRET_ACCESS_KEY: "{{ AWS_SECRET_ACCESS_KEY }}"
+        AWS_SESSION_TOKEN: "{{ AWS_SESSION_TOKEN }}"
 
     - name: Apply Terraform configuration
       command: |
@@ -51,3 +52,7 @@
         -var="ami_id={{ os_ami_map[vm_os] }}"
       args:
         chdir: "/tmp/cloud-vm-provision/terraform"
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ AWS_ACCESS_KEY_ID }}"
+        AWS_SECRET_ACCESS_KEY: "{{ AWS_SECRET_ACCESS_KEY }}"
+        AWS_SESSION_TOKEN: "{{ AWS_SESSION_TOKEN }}"
