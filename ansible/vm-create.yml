@@ -34,24 +34,28 @@
         dest: /tmp/cloud-vm-provision
         force: yes
 
-    - name: Debug AWS environment variables
-      debug:
-        msg:
-          - "AWS_ACCESS_KEY_ID present: {{ 'AWS_ACCESS_KEY_ID' in ansible_env }}"
-          - "AWS_SECRET_ACCESS_KEY present: {{ 'AWS_SECRET_ACCESS_KEY' in ansible_env }}"
-          - "AWS_SESSION_TOKEN present: {{ 'AWS_SESSION_TOKEN' in ansible_env }}"
-
     - name: Initialize Terraform
       command: terraform init
       args:
         chdir: "/tmp/cloud-vm-provision/terraform"
 
-    - name: Apply Terraform configuration
-      command: |
-        terraform apply -auto-approve \
-        -var="vm_name={{ vm_name }}" \
-        -var="vm_flavor={{ flavor_map[vm_flavor_raw] | default('t3.micro') }}" \
-        -var="cloud_init={{ cloud_init }}" \
-        -var="ami_id={{ os_ami_map[vm_os] }}"
-      args:
-        chdir: "/tmp/cloud-vm-provision/terraform"
+    - name: Initialize and apply Terraform configuration
+      community.general.terraform:
+        project_path: "{{ terraform_project_path }}"
+        state: present
+        force_init: true
+        variables:
+          vm_name: "{{ vm_name }}"
+          vm_flavor: "{{ flavor_map[vm_flavor_raw] | default('t3.micro') }}"
+          cloud_init: "{{ cloud_init }}"
+          ami_id: "{{ os_ami_map[vm_os] }}"
+
+    # - name: Apply Terraform configuration
+    #   command: |
+    #     terraform apply -auto-approve \
+    #     -var="vm_name={{ vm_name }}" \
+    #     -var="vm_flavor={{ flavor_map[vm_flavor_raw] | default('t3.micro') }}" \
+    #     -var="cloud_init={{ cloud_init }}" \
+    #     -var="ami_id={{ os_ami_map[vm_os] }}"
+    #   args:
+    #     chdir: "/tmp/cloud-vm-provision/terraform"
