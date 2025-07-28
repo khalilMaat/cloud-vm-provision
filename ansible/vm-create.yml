@@ -1,6 +1,6 @@
 ---
 - name: Simplified AWS VM Provisioning
-  hosts: ansible1
+  hosts: localhost
   gather_facts: true
 
   vars:
