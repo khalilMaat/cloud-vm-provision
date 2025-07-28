@@ -1,0 +1,35 @@
+---
+- name: Simplified AWS VM Provisioning - Extra Vars Display
+  hosts: ansible1
+  gather_facts: false
+
+  vars:
+    vm_name: "{{ vm_name | default(omit) }}"
+    vm_flavor_raw: "{{ vm_flavor | default(omit) }}"
+    vm_os: "{{ vm_os | default(omit) }}"
+    cloud_init_raw: "{{ cloud_init | default(omit) }}"
+
+  tasks:
+    - name: Display extra vars provided
+      debug:
+        msg: |
+          Extra Variables Provided:
+          - vm_name: "{{ vm_name | default('Not provided') }}"
+          - vm_flavor: "{{ vm_flavor_raw | default('Not provided') }}"
+          - vm_os: "{{ vm_os | default('Not provided') }}"
+          - cloud_init: |
+              {{ cloud_init_raw | default('Not provided') | indent(14) }}
+      when:
+        - vm_name is defined or
+          vm_flavor is defined or
+          vm_os is defined or
+          cloud_init is defined
+
+    - name: No extra vars provided notification
+      debug:
+        msg: "No extra variables were provided"
+      when:
+        - vm_name is not defined and
+          vm_flavor is not defined and
+          vm_os is not defined and
+          cloud_init is not defined
