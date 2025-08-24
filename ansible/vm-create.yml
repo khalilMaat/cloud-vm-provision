@@ -5,8 +5,8 @@
 
   vars:
     vm_name: "{{ vm_name | default('test-vm') }}"
-    vm_flavor_raw: "{{ vm_flavor | default('small') }}"
-    vm_os: "{{ vm_os | default('ubuntu-22.04') }}"
+    vm_flavor_raw: "{{ flavor | default('small') }}"
+    vm_os: "{{ os | default('ubuntu-22.04') }}"
     cloud_init_raw: "{{ cloud_init | default('#cloud-config\npackage_upgrade: true') }}"
 
     os_ami_map:
